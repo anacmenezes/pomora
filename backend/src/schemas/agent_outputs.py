@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .request import Idioma
+from .request import Idioma, UserRequest
 
 
 IntakeField = Literal[
@@ -111,6 +111,148 @@ class MarciaOutput(BaseModel):
             raise ValueError(
                 "updated_fields deve corresponder exatamente "
                 "às chaves presentes em updates."
+            )
+
+        return self
+
+
+
+class ProfessoraInput(BaseModel):
+    """Solicitação validada recebida pela agente Professora."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_request: UserRequest = Field(
+        description="Solicitação completa e validada pela Márcia."
+    )
+
+
+class EstrategiaDiaria(BaseModel):
+    """Estratégia pedagógica definida para um dia da semana."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    dia: int = Field(
+        ge=1,
+        le=5,
+        description="Número do dia no planejamento, de 1 a 5.",
+    )
+
+    foco: str = Field(
+        min_length=3,
+        max_length=150,
+        description="Foco pedagógico do dia.",
+    )
+
+    objetivo_especifico: str = Field(
+        min_length=10,
+        max_length=300,
+        description="Aprendizagem específica esperada para o dia.",
+    )
+
+    intencao_pedagogica: str = Field(
+        min_length=10,
+        max_length=500,
+        description="O que se pretende desenvolver pedagogicamente.",
+    )
+
+    estrategia_aprendizagem: str = Field(
+        min_length=10,
+        max_length=500,
+        description=(
+            "Abordagem de aprendizagem que deverá orientar "
+            "a seleção das atividades."
+        ),
+    )
+
+    orientacoes_pesquisa: list[str] = Field(
+        min_length=1,
+        max_length=10,
+        description=(
+            "Orientações para a Pesquisadora encontrar "
+            "atividades adequadas ao foco do dia."
+        ),
+    )
+    
+    cuidados_seguranca: list[str] = Field(
+        min_length=1,
+        max_length=8,
+        description=(
+            "Cuidados concretos de segurança para executar "
+            "as experiências propostas neste dia."
+        ),
+    )
+
+    adaptacoes_inclusao: list[str] = Field(
+        min_length=1,
+        max_length=8,
+        description=(
+            "Alternativas para permitir a participação de "
+            "crianças com diferentes ritmos e habilidades."
+        ),
+    )
+
+
+class ProfessoraOutput(BaseModel):
+    """Plano pedagógico estratégico produzido pela Professora."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    objetivo_geral: str = Field(
+        min_length=10,
+        max_length=500,
+        description="Objetivo pedagógico central da semana.",
+    )
+
+    objetivos_especificos: list[str] = Field(
+        min_length=2,
+        max_length=8,
+        description="Aprendizagens específicas esperadas ao longo da semana.",
+    )
+
+    justificativa_pedagogica: str = Field(
+        min_length=20,
+        max_length=1000,
+        description=(
+            "Justificativa da organização pedagógica proposta, "
+            "considerando o contexto da solicitação."
+        ),
+    )
+
+    progressao_semanal: str = Field(
+        min_length=20,
+        max_length=1000,
+        description=(
+            "Explicação de como as aprendizagens evoluem "
+            "ao longo dos cinco dias."
+        ),
+    )
+
+    estrategias_diarias: list[EstrategiaDiaria] = Field(
+        min_length=5,
+        max_length=5,
+        description=(
+            "Estratégia pedagógica para cada um dos cinco dias."
+        ),
+    )
+
+    criterios_selecao_atividades: list[str] = Field(
+        min_length=3,
+        max_length=10,
+        description=(
+            "Critérios que a Pesquisadora deverá utilizar "
+            "para selecionar as atividades."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def validar_sequencia_dias(self):
+        dias = [estrategia.dia for estrategia in self.estrategias_diarias]
+
+        if dias != [1, 2, 3, 4, 5]:
+            raise ValueError(
+                "As estratégias devem conter exatamente os dias "
+                "1, 2, 3, 4 e 5, nessa ordem."
             )
 
         return self
