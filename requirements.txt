@@ -1,0 +1,19 @@
+
+# Agent framework
+langchain>=1.0,<2.0
+langgraph>=1.0,<2.0
+
+# OpenAI
+langchain-openai>=1.0,<2.0
+
+# Google Gemini SDK
+google-genai>=1.0,<2.0
+
+# Data validation and settings
+pydantic>=2.7,<3.0
+pydantic-settings>=2.0,<3.0
+python-dotenv>=1.0,<2.0
+
+# Vector search
+faiss-cpu>=1.8,<2.0
+numpy>=1.26,<3.0
