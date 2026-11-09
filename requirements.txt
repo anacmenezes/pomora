@@ -17,3 +17,5 @@ python-dotenv>=1.0,<2.0
 # Vector search
 faiss-cpu>=1.8,<2.0
 numpy>=1.26,<3.0
+
+trafilatura

@@ -1,5 +1,6 @@
 
 from langchain_core.prompts import ChatPromptTemplate
+from pydantic import ValidationError
 
 from ...schemas.agent_outputs import (
     ProfessoraInput,
@@ -16,19 +17,22 @@ def criar_cadeia_professora():
         [
             ("system", PROFESSORA_SYSTEM_PROMPT),
             (
-                "human",
-                """
-                Analise a solicitação pedagógica validada abaixo.
+            "human",
+            """
+            Analise a solicitação pedagógica validada abaixo.
 
-                SOLICITAÇÃO DO USUÁRIO:
-                {user_request}
+            SOLICITAÇÃO DO USUÁRIO:
+            {user_request}
 
-                Construa uma estratégia pedagógica coerente
-                para os cinco dias da semana.
+            Construa uma estratégia pedagógica coerente
+            para os cinco dias da semana.
 
-                Considere todas as informações fornecidas.
-                Não invente informações ausentes.
-                """,
+            Considere todas as informações fornecidas.
+            Não invente informações ausentes.
+
+            INSTRUÇÃO DE CORREÇÃO:
+            {correcao_validacao}
+            """,
             ),
         ]
     )
@@ -49,16 +53,39 @@ def gerar_estrategia_pedagogica(
     """
     Recebe uma solicitação validada e produz
     uma estratégia pedagógica estruturada.
+
+    Realiza uma única tentativa de correção
+    caso o retorno não cumpra o schema.
     """
 
     cadeia = criar_cadeia_professora()
 
-    resultado = cadeia.invoke(
-        {
-            "user_request": entrada.user_request.model_dump_json(
-                indent=2,
-            )
-        }
-    )
+    dados = {
+        "user_request": entrada.user_request.model_dump_json(
+            indent=2,
+        ),
+        "correcao_validacao": "",
+    }
 
-    return resultado
+    try:
+        return cadeia.invoke(dados)
+
+    except ValidationError as erro:
+        print(
+            "Retorno da Professora inválido. "
+            "Realizando uma tentativa de correção."
+        )
+
+        dados["correcao_validacao"] = (
+            "A resposta anterior não cumpriu o schema. "
+            "Corrija os seguintes erros:\n"
+            f"{erro}\n\n"
+            "Gere novamente a estrutura completa. "
+            "Não omita nenhum campo obrigatório. "
+            "Especialmente, cada um dos cinco dias deve "
+            "conter pelo menos uma adaptação concreta "
+            "em adaptacoes_inclusao. "
+            "Não utilize listas vazias para campos obrigatórios."
+        )
+
+        return cadeia.invoke(dados)
