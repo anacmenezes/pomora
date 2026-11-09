@@ -1,0 +1,393 @@
+{
+  "contexto": {
+    "escolaridade": "educacao_infantil",
+    "ano_serie": "4 anos",
+    "modalidade": "coletiva",
+    "quantidade_criancas": 10,
+    "necessidades_adaptacoes": null,
+    "tema_semana": "Animais",
+    "objetivo_aprendizagem": "desenvolver a coordenação motora fina e ampla por meio de atividades lúdicas",
+    "preferencias_materiais": [
+      "materiais recicláveis",
+      "papel",
+      "papelão"
+    ],
+    "restricoes_materiais": [],
+    "idioma": "pt-BR",
+    "curriculo_regiao": "BR"
+  },
+  "apresentacao": "Nesta semana, as crianças da turma de 4 anos irão explorar o tema \"Animais\" através de atividades lúdicas que visam desenvolver a coordenação motora fina e ampla. As experiências foram organizadas para promover a criatividade, a socialização e a consciência ambiental, utilizando materiais recicláveis, papel e papelão. Ao longo dos cinco dias, as crianças participarão de atividades que vão desde a exploração sensorial até a construção de habitats para os animais criados, culminando em uma apresentação dos trabalhos realizados.",
+  "objetivo_geral": "Desenvolver a coordenação motora fina e ampla das crianças por meio de atividades lúdicas relacionadas ao tema 'Animais'.",
+  "objetivos_especificos": [
+    "Estimular a coordenação motora fina através da manipulação de materiais recicláveis.",
+    "Promover a coordenação motora ampla por meio de movimentos corporais imitando animais.",
+    "Desenvolver a criatividade e a expressão corporal ao criar animais com papel e papelão.",
+    "Fomentar a socialização e o trabalho em equipe durante as atividades em grupo.",
+    "Estimular a observação e a curiosidade sobre os animais e seus habitats."
+  ],
+  "justificativa_pedagogica": "A proposta de trabalhar com o tema 'Animais' é pertinente para a faixa etária de 4 anos, pois as crianças nessa idade têm grande interesse por animais e suas características. As atividades lúdicas favorecem o desenvolvimento da coordenação motora, essencial para a autonomia e a exploração do ambiente. Além disso, o uso de materiais recicláveis promove a consciência ambiental e a criatividade.",
+  "progressao_semanal": "A semana inicia com a exploração sensorial e a sensibilização das crianças para o tema 'Animais', através da observação e manipulação de materiais recicláveis. No segundo dia, as crianças experimentam a criação de animais, desenvolvendo a coordenação motora fina. O terceiro dia foca na expressão corporal, onde as crianças imitam os movimentos dos animais. No quarto dia, as atividades são realizadas em grupo, promovendo a socialização e o trabalho em equipe. Por fim, o quinto dia integra as aprendizagens da semana com uma atividade prática que envolve a construção de um habitat para os animais criados, consolidando o conhecimento adquirido.",
+  "vocabulario_semana": [
+    "animais",
+    "coordenação motora",
+    "recicláveis",
+    "papel",
+    "papelão",
+    "habitat",
+    "imitar",
+    "movimento",
+    "criação",
+    "expressão"
+  ],
+  "materiais_gerais": [
+    "materiais recicláveis",
+    "papel",
+    "papelão"
+  ],
+  "orientacoes_gerais": [
+    "Organizar o espaço de forma que as crianças possam se movimentar livremente.",
+    "Estimular a participação de todas as crianças, respeitando seus ritmos e habilidades.",
+    "Fazer rodízio nos grupos para promover a interação entre todas as crianças."
+  ],
+  "status_revisao": "aprovado_com_ressalvas",
+  "parecer_geral": "O planejamento apresenta uma proposta coerente e adequada para a faixa etária de 4 anos, com atividades que promovem o desenvolvimento da coordenação motora fina e ampla. A sequência semanal é bem estruturada, permitindo uma progressão lógica das aprendizagens. No entanto, algumas atividades carecem de cuidados adicionais de segurança e as orientações de uso dos materiais de apoio precisam ser mais específicas. As adaptações para inclusão são pertinentes, mas poderiam ser mais detalhadas em algumas atividades.",
+  "avaliacao_pedagogica": "O planejamento está alinhado com o tema \"Animais\" e os objetivos de aprendizagem propostos. As atividades diárias estão coerentes com os objetivos gerais e específicos, promovendo a coordenação motora e a criatividade. A progressão pedagógica entre os dias é adequada, com uma diversidade de experiências que envolvem tanto a manipulação de materiais quanto a expressão corporal. O quinto dia integra as aprendizagens de forma eficaz, permitindo que as crianças apresentem suas criações. Contudo, é importante garantir que as atividades sejam seguras e que as adaptações para inclusão sejam efetivas.",
+  "pontos_atencao": [
+    "Reforçar os cuidados de segurança, especialmente no uso de tesouras e na supervisão das atividades.",
+    "Detalhar mais as adaptações de inclusão para garantir a participação de todas as crianças.",
+    "Especificar melhor as orientações de uso dos materiais de apoio para facilitar a execução das atividades."
+  ],
+  "dias": [
+    {
+      "dia": 1,
+      "atividade": {
+        "dia": 1,
+        "titulo": "Explorando os Animais com Materiais Recicláveis",
+        "objetivo": "Desenvolver a coordenação motora fina através da manipulação de materiais recicláveis.",
+        "descricao": "As crianças irão explorar diferentes materiais recicláveis e criar representações de animais. Elas poderão escolher os materiais que mais gostam e usar a criatividade para montar seus animais. Essa atividade permite que as crianças desenvolvam a coordenação motora fina ao recortar, colar e montar os materiais.",
+        "intencao_pedagogica": "A atividade foi escolhida para estimular a criatividade e a coordenação motora fina das crianças, permitindo que elas manipulem diferentes texturas e formas. Além disso, a exploração de materiais recicláveis promove a consciência ambiental desde cedo.",
+        "campo_experiencia_bncc": "Traços, sons, cores e formas",
+        "componente_curricular": null,
+        "duracao_minutos": 60,
+        "materiais": [
+          "materiais recicláveis",
+          "tesoura",
+          "cola",
+          "canetinhas"
+        ],
+        "etapas_execucao": [
+          "Preparar uma mesa com os materiais recicláveis disponíveis.",
+          "Explicar para as crianças que elas irão criar animais usando os materiais que escolherem.",
+          "Orientar as crianças a recortar, colar e montar seus animais, ajudando quando necessário."
+        ],
+        "cuidados_seguranca": [
+          "Supervisionar o uso da tesoura para evitar cortes acidentais."
+        ],
+        "adaptacoes_inclusao": [
+          "Oferecer materiais com diferentes texturas e tamanhos para facilitar a manipulação."
+        ]
+      },
+      "recursos": {
+        "dia": 1,
+        "imagens": [
+          {
+            "descricao": "Uma mesa cheia de materiais recicláveis coloridos, como garrafas plásticas, papelão e papel colorido, com crianças ao redor explorando e criando animais.",
+            "prompt_geracao": "Crie uma ilustração educativa infantil em estilo digital, mostrando uma mesa cheia de materiais recicláveis coloridos, como garrafas plásticas, papelão e papel colorido. Inclua crianças de diversas etnias ao redor da mesa, explorando e criando animais com os materiais. O ambiente deve ser alegre e convidativo, com cores vibrantes e formas simples, adequado para crianças de 4 anos.",
+            "texto_alternativo": "Crianças explorando materiais recicláveis em uma mesa, criando representações de animais.",
+            "legenda": "Explorando os materiais recicláveis para criar animais.",
+            "imagem_url": null
+          }
+        ],
+        "musicas": [
+          {
+            "titulo": "A Música dos Animais",
+            "descricao": "Uma canção divertida que fala sobre diferentes animais e seus sons, incentivando as crianças a imitarem os sons dos animais.",
+            "finalidade_pedagogica": "Estimula a linguagem oral e a identificação de diferentes animais.",
+            "url": null
+          }
+        ],
+        "videos": [
+          {
+            "titulo": "Animais e Seus Sons",
+            "descricao": "Um vídeo educativo que apresenta diferentes animais e os sons que eles fazem, promovendo a interação das crianças.",
+            "finalidade_pedagogica": "Ajuda as crianças a reconhecerem os sons dos animais e a desenvolverem a escuta ativa.",
+            "duracao_minutos": 5,
+            "url": null
+          }
+        ],
+        "orientacoes_uso": [
+          "Apresente a ilustração antes de iniciar a atividade para estimular a curiosidade das crianças.",
+          "Utilize a música para criar um momento de interação, onde as crianças imitam os sons dos animais.",
+          "Reproduza o vídeo após a atividade para reforçar o aprendizado sobre os animais."
+        ]
+      },
+      "observacoes_revisao": [
+        "A supervisão do uso da tesoura deve ser rigorosa, garantindo que todas as crianças estejam seguras durante a atividade."
+      ]
+    },
+    {
+      "dia": 2,
+      "atividade": {
+        "dia": 2,
+        "titulo": "Criando Animais de Papel",
+        "objetivo": "Estimular a coordenação motora fina e a criatividade ao criar animais com papel.",
+        "descricao": "As crianças irão utilizar papel para criar diferentes animais. Elas poderão desenhar, recortar e colar partes do corpo dos animais, desenvolvendo a coordenação motora fina. A atividade também pode incluir a pintura dos animais, estimulando a expressão artística.",
+        "intencao_pedagogica": "Essa atividade foi escolhida para aprofundar o desenvolvimento da coordenação motora fina e incentivar a criatividade das crianças. O uso do papel permite que elas explorem diferentes formas e cores, além de desenvolverem habilidades artísticas.",
+        "campo_experiencia_bncc": "Traços, sons, cores e formas",
+        "componente_curricular": null,
+        "duracao_minutos": 60,
+        "materiais": [
+          "papel colorido",
+          "tesoura",
+          "cola",
+          "pincéis",
+          "tinta guache"
+        ],
+        "etapas_execucao": [
+          "Preparar o espaço com mesas e materiais de papel.",
+          "Explicar que as crianças irão criar animais de papel, podendo desenhar e recortar.",
+          "Orientar as crianças a pintar seus animais, ajudando com a colagem das partes."
+        ],
+        "cuidados_seguranca": [
+          "Supervisionar o uso da tesoura e da tinta para evitar sujeira excessiva."
+        ],
+        "adaptacoes_inclusao": [
+          "Fornecer papel em tamanhos diferentes para facilitar o manuseio."
+        ]
+      },
+      "recursos": {
+        "dia": 2,
+        "imagens": [
+          {
+            "descricao": "Crianças desenhando e recortando animais de papel colorido, com mesas cheias de papel e tintas ao fundo.",
+            "prompt_geracao": "Crie uma ilustração educativa infantil em estilo aquarela, mostrando crianças de diversas etnias desenhando e recortando animais de papel colorido em mesas. Inclua tintas e pincéis ao fundo, criando um ambiente artístico e alegre, adequado para crianças de 4 anos.",
+            "texto_alternativo": "Crianças criando animais de papel colorido em mesas com tintas e pincéis.",
+            "legenda": "Criando animais de papel.",
+            "imagem_url": null
+          }
+        ],
+        "musicas": [
+          {
+            "titulo": "A Dança dos Animais",
+            "descricao": "Uma canção animada que incentiva as crianças a dançarem e se movimentarem como diferentes animais.",
+            "finalidade_pedagogica": "Estimula a expressão corporal e a coordenação motora ampla.",
+            "url": null
+          }
+        ],
+        "videos": [
+          {
+            "titulo": "Como Fazer Animais de Papel",
+            "descricao": "Um vídeo passo a passo que ensina como criar animais de papel, mostrando diferentes técnicas de recorte e colagem.",
+            "finalidade_pedagogica": "Ajuda as crianças a entenderem o processo de criação de animais de papel, estimulando a criatividade.",
+            "duracao_minutos": 7,
+            "url": null
+          }
+        ],
+        "orientacoes_uso": [
+          "Mostre a ilustração antes da atividade para inspirar as crianças na criação dos animais.",
+          "Utilize a música para animar o ambiente enquanto as crianças trabalham em suas criações.",
+          "Reproduza o vídeo para mostrar diferentes maneiras de criar animais de papel, incentivando a criatividade."
+        ]
+      },
+      "observacoes_revisao": [
+        "A supervisão do uso da tesoura e da tinta deve ser reforçada para evitar acidentes e sujeira excessiva."
+      ]
+    },
+    {
+      "dia": 3,
+      "atividade": {
+        "dia": 3,
+        "titulo": "Imitando os Animais",
+        "objetivo": "Desenvolver a coordenação motora ampla através da imitação de movimentos de animais.",
+        "descricao": "As crianças irão participar de um jogo onde imitam os movimentos de diferentes animais. O professor irá chamar um animal e as crianças deverão imitar seus movimentos, como pular como um sapo ou rastejar como uma cobra. Essa atividade promove o movimento e a expressão corporal.",
+        "intencao_pedagogica": "A atividade foi escolhida para estimular a coordenação motora ampla e a expressão corporal das crianças. A imitação de movimentos de animais é uma forma divertida de trabalhar o corpo e a criatividade.",
+        "campo_experiencia_bncc": "Corpo, gestos e movimentos",
+        "componente_curricular": null,
+        "duracao_minutos": 45,
+        "materiais": [
+          "espaço livre para movimentação"
+        ],
+        "etapas_execucao": [
+          "Preparar um espaço amplo para as crianças se movimentarem.",
+          "Explicar que elas irão imitar os movimentos de diferentes animais que o professor irá chamar.",
+          "Iniciar o jogo, chamando os animais e incentivando as crianças a se movimentarem."
+        ],
+        "cuidados_seguranca": [
+          "Garantir que o espaço esteja livre de objetos que possam causar quedas."
+        ],
+        "adaptacoes_inclusao": [
+          "Permitir que as crianças escolham o animal que querem imitar, respeitando suas preferências."
+        ]
+      },
+      "recursos": {
+        "dia": 3,
+        "imagens": [
+          {
+            "descricao": "Crianças em um espaço amplo imitando os movimentos de diferentes animais, como sapos e cobras, com expressões alegres.",
+            "prompt_geracao": "Crie uma ilustração educativa infantil em estilo digital, mostrando crianças de diversas etnias em um espaço amplo, imitando os movimentos de diferentes animais, como sapos e cobras. As crianças devem estar se divertindo e expressando alegria, com cores vibrantes e formas simples, adequado para crianças de 4 anos.",
+            "texto_alternativo": "Crianças imitando os movimentos de diferentes animais em um espaço amplo.",
+            "legenda": "Imitando os movimentos dos animais.",
+            "imagem_url": null
+          }
+        ],
+        "musicas": [
+          {
+            "titulo": "Vamos Imitar os Animais",
+            "descricao": "Uma canção interativa que convida as crianças a imitarem os movimentos de diferentes animais enquanto dançam.",
+            "finalidade_pedagogica": "Estimula a coordenação motora ampla e a expressão corporal.",
+            "url": null
+          }
+        ],
+        "videos": [
+          {
+            "titulo": "Movimentos dos Animais",
+            "descricao": "Um vídeo que mostra diferentes animais e seus movimentos, incentivando as crianças a imitarem.",
+            "finalidade_pedagogica": "Ajuda as crianças a aprenderem sobre os movimentos dos animais de forma divertida.",
+            "duracao_minutos": 6,
+            "url": null
+          }
+        ],
+        "orientacoes_uso": [
+          "Apresente a ilustração antes da atividade para motivar as crianças a se movimentarem como os animais.",
+          "Utilize a música para criar um ambiente animado enquanto as crianças imitam os movimentos dos animais.",
+          "Reproduza o vídeo para mostrar os movimentos dos animais, incentivando as crianças a imitarem."
+        ]
+      },
+      "observacoes_revisao": [
+        "Garantir que o espaço esteja livre de objetos que possam causar quedas durante a atividade de imitação dos movimentos."
+      ]
+    },
+    {
+      "dia": 4,
+      "atividade": {
+        "dia": 4,
+        "titulo": "Construindo um Habitat para os Animais",
+        "objetivo": "Fomentar a socialização e o trabalho em equipe ao construir um habitat para os animais criados.",
+        "descricao": "As crianças irão trabalhar em grupos para construir um habitat para os animais que criaram nos dias anteriores. Elas poderão usar papel, papelão e outros materiais recicláveis para criar o ambiente dos animais. Essa atividade promove a colaboração e a criatividade.",
+        "intencao_pedagogica": "A atividade foi escolhida para promover a socialização e o trabalho em equipe, além de integrar as aprendizagens da semana. A construção do habitat permite que as crianças apliquem o que aprenderam sobre os animais e seus ambientes.",
+        "campo_experiencia_bncc": "O eu, o outro e o nós",
+        "componente_curricular": null,
+        "duracao_minutos": 60,
+        "materiais": [
+          "papelão",
+          "papel",
+          "materiais recicláveis",
+          "tesoura",
+          "cola"
+        ],
+        "etapas_execucao": [
+          "Dividir as crianças em grupos e explicar que elas irão construir um habitat para os animais.",
+          "Distribuir os materiais e orientar as crianças a trabalharem juntas na construção.",
+          "Acompanhar e ajudar os grupos durante a atividade."
+        ],
+        "cuidados_seguranca": [
+          "Supervisionar o uso da tesoura e garantir que as crianças não se machuquem durante a construção."
+        ],
+        "adaptacoes_inclusao": [
+          "Formar grupos com crianças que tenham habilidades complementares para facilitar a colaboração."
+        ]
+      },
+      "recursos": {
+        "dia": 4,
+        "imagens": [
+          {
+            "descricao": "Crianças trabalhando em grupos para construir um habitat para os animais, usando papelão e materiais recicláveis, com expressões de colaboração.",
+            "prompt_geracao": "Crie uma ilustração educativa infantil em estilo aquarela, mostrando crianças de diversas etnias trabalhando em grupos para construir um habitat para os animais, utilizando papelão e materiais recicláveis. As crianças devem estar colaborando e se divertindo, com um ambiente alegre e colorido, adequado para crianças de 4 anos.",
+            "texto_alternativo": "Crianças construindo um habitat para os animais com papelão e materiais recicláveis.",
+            "legenda": "Construindo um habitat para os animais.",
+            "imagem_url": null
+          }
+        ],
+        "musicas": [
+          {
+            "titulo": "A Canção da Amizade",
+            "descricao": "Uma canção que fala sobre trabalhar em equipe e a importância da amizade, incentivando a colaboração.",
+            "finalidade_pedagogica": "Promove a socialização e o trabalho em equipe.",
+            "url": null
+          }
+        ],
+        "videos": [
+          {
+            "titulo": "Construindo Habitats",
+            "descricao": "Um vídeo que mostra como diferentes animais vivem em seus habitats, inspirando as crianças a criar os seus.",
+            "finalidade_pedagogica": "Ajuda as crianças a entenderem a importância dos habitats para os animais.",
+            "duracao_minutos": 5,
+            "url": null
+          }
+        ],
+        "orientacoes_uso": [
+          "Mostre a ilustração antes da atividade para inspirar as crianças na construção do habitat.",
+          "Utilize a música para criar um ambiente colaborativo enquanto as crianças trabalham em grupo.",
+          "Reproduza o vídeo para mostrar como os animais vivem em seus habitats, incentivando a criatividade."
+        ]
+      },
+      "observacoes_revisao": [
+        "Supervisionar o uso da tesoura e garantir que as crianças não se machuquem durante a construção do habitat."
+      ]
+    },
+    {
+      "dia": 5,
+      "atividade": {
+        "dia": 5,
+        "titulo": "Apresentação dos Animais e Habitats",
+        "objetivo": "Consolidar as aprendizagens da semana através da apresentação dos animais e habitats criados.",
+        "descricao": "As crianças irão apresentar os animais e habitats que criaram durante a semana. Cada grupo terá a oportunidade de mostrar seu trabalho e explicar sobre os animais que criaram e como é o habitat deles. Essa atividade promove a comunicação e a expressão oral.",
+        "intencao_pedagogica": "A atividade foi escolhida para consolidar as aprendizagens da semana, permitindo que as crianças compartilhem suas criações e desenvolvam habilidades de comunicação. A apresentação em grupo também fortalece a confiança e a autoestima.",
+        "campo_experiencia_bncc": "Escuta, fala, pensamento e imaginação",
+        "componente_curricular": null,
+        "duracao_minutos": 60,
+        "materiais": [
+          "animais e habitats criados durante a semana"
+        ],
+        "etapas_execucao": [
+          "Organizar um espaço para as apresentações.",
+          "Explicar que cada grupo irá apresentar seu animal e habitat.",
+          "Iniciar as apresentações, incentivando as crianças a falarem sobre suas criações."
+        ],
+        "cuidados_seguranca": [
+          "Garantir que o espaço esteja organizado para evitar acidentes durante as apresentações."
+        ],
+        "adaptacoes_inclusao": [
+          "Permitir que as crianças que se sentirem mais tímidas apresentem em duplas ou grupos menores."
+        ]
+      },
+      "recursos": {
+        "dia": 5,
+        "imagens": [
+          {
+            "descricao": "Crianças apresentando seus animais e habitats criados, com expressões de orgulho e alegria, em um espaço organizado para as apresentações.",
+            "prompt_geracao": "Crie uma ilustração educativa infantil em estilo digital, mostrando crianças de diversas etnias apresentando seus animais e habitats criados em um espaço organizado. As crianças devem estar expressando orgulho e alegria, com um ambiente colorido e acolhedor, adequado para crianças de 4 anos.",
+            "texto_alternativo": "Crianças apresentando seus animais e habitats criados em um espaço organizado.",
+            "legenda": "Apresentação dos animais e habitats.",
+            "imagem_url": null
+          }
+        ],
+        "musicas": [
+          {
+            "titulo": "A Música da Apresentação",
+            "descricao": "Uma canção que celebra a criatividade e a apresentação, incentivando as crianças a se expressarem.",
+            "finalidade_pedagogica": "Estimula a comunicação e a expressão oral.",
+            "url": null
+          }
+        ],
+        "videos": [
+          {
+            "titulo": "Apresentações de Animais",
+            "descricao": "Um vídeo que mostra crianças apresentando seus trabalhos, incentivando a expressão e a comunicação.",
+            "finalidade_pedagogica": "Ajuda as crianças a desenvolverem habilidades de apresentação e comunicação.",
+            "duracao_minutos": 4,
+            "url": null
+          }
+        ],
+        "orientacoes_uso": [
+          "Apresente a ilustração antes das apresentações para motivar as crianças a se expressarem.",
+          "Utilize a música para criar um ambiente acolhedor durante as apresentações.",
+          "Reproduza o vídeo para mostrar exemplos de apresentações, incentivando as crianças a se comunicarem."
+        ]
+      },
+      "observacoes_revisao": [
+        "Organizar o espaço de forma a evitar acidentes durante as apresentações, garantindo que todas as crianças tenham espaço para se movimentar."
+      ]
+    }
+  ]
+}

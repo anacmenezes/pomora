@@ -1,29 +1,43 @@
-
 from typing import Any
 
 from pydantic import ValidationError
 
 from ...schemas.request import UserRequest
+
 from ...schemas.agent_outputs import (
     ProfessoraInput,
-    PesquisadoraInput,
+    AssistenteInput,
     RevisoraInput,
-    RedatoraInput,
 )
-from ...chains.agents.professora import gerar_estrategia_pedagogica
-from ...chains.agents.pesquisadora import pesquisar_atividades_pedagogicas
-from ...chains.agents.revisora import revisar_planejamento
-from ...chains.agents.redatora import redigir_planejamento
+
+from ...chains.agents.professora import (
+    gerar_planejamento_pedagogico,
+)
+
+from ...chains.agents.assistente import (
+    gerar_recursos_apoio,
+)
+
+from ...chains.agents.revisora import (
+    revisar_planejamento,
+)
 
 from .planning_state import PlanningGraphState
 
+
+# ============================================================
+# VALIDACAO DA SOLICITACAO
+# ============================================================
 
 def validar_solicitacao_confirmada(
     state: PlanningGraphState,
 ) -> dict[str, Any]:
     """
     Valida se a solicitação recebida do Intake foi confirmada
-    e converte o dicionário para UserRequest.
+    e converte os dados para UserRequest.
+
+    O planejamento somente pode começar depois da confirmação
+    explícita do usuário.
     """
 
     if state.get("intake_status") != "confirmed":
@@ -54,6 +68,7 @@ def validar_solicitacao_confirmada(
         )
 
     except ValidationError as exc:
+
         erros = [
             error["msg"]
             for error in exc.errors(include_input=False)
@@ -76,13 +91,18 @@ def validar_solicitacao_confirmada(
     }
 
 
+# ============================================================
+# EXECUCAO DA PROFESSORA
+# ============================================================
+
 def executar_professora(
     state: PlanningGraphState,
 ) -> dict[str, Any]:
     """
     Executa a agente Professora.
 
-    Recebe UserRequest e produz ProfessoraOutput.
+    Recebe UserRequest e produz ProfessoraOutput
+    com o planejamento pedagógico completo dos cinco dias.
     """
 
     user_request = state.get("user_request")
@@ -92,24 +112,34 @@ def executar_professora(
             "A Professora não recebeu uma solicitação validada."
         )
 
+    if not isinstance(user_request, UserRequest):
+        user_request = UserRequest.model_validate(user_request)
+
     entrada = ProfessoraInput(
         user_request=user_request
     )
 
-    resultado = gerar_estrategia_pedagogica(entrada)
+    resultado = gerar_planejamento_pedagogico(entrada)
 
     return {
         "professora_output": resultado,
     }
 
 
-def executar_pesquisadora(
+# ============================================================
+# EXECUCAO DO ASSISTENTE
+# ============================================================
+
+def executar_assistente(
     state: PlanningGraphState,
 ) -> dict[str, Any]:
     """
-    Executa a agente Pesquisadora.
+    Executa o agente Assistente.
 
-    Recebe a solicitação e a estratégia pedagógica.
+    Recebe a solicitação e o planejamento completo da Professora.
+
+    Produz AssistenteOutput com imagens ilustrativas,
+    sugestões de músicas, vídeos e orientações de uso.
     """
 
     user_request = state.get("user_request")
@@ -117,21 +147,28 @@ def executar_pesquisadora(
 
     if user_request is None or professora_output is None:
         raise ValueError(
-            "A Pesquisadora precisa receber a solicitação "
-            "e o resultado da Professora."
+            "O Assistente precisa receber a solicitação "
+            "e o planejamento da Professora."
         )
 
-    entrada = PesquisadoraInput(
+    if not isinstance(user_request, UserRequest):
+        user_request = UserRequest.model_validate(user_request)
+
+    entrada = AssistenteInput(
         user_request=user_request,
         professora_output=professora_output,
     )
 
-    resultado = pesquisar_atividades_pedagogicas(entrada)
+    resultado = gerar_recursos_apoio(entrada)
 
     return {
-        "pesquisadora_output": resultado,
+        "assistente_output": resultado,
     }
 
+
+# ============================================================
+# EXECUCAO DA REVISORA
+# ============================================================
 
 def executar_revisora(
     state: PlanningGraphState,
@@ -139,72 +176,43 @@ def executar_revisora(
     """
     Executa a agente Revisora.
 
-    Recebe a solicitação, a estratégia e os resultados
-    da pesquisa pedagógica.
+    Recebe:
+    - Solicitação validada.
+    - Planejamento da Professora.
+    - Recursos de apoio do Assistente.
+
+    Produz RevisoraOutput, que representa o planejamento
+    semanal final do POMORA.
     """
 
     user_request = state.get("user_request")
     professora_output = state.get("professora_output")
-    pesquisadora_output = state.get("pesquisadora_output")
+    assistente_output = state.get("assistente_output")
 
     if (
         user_request is None
         or professora_output is None
-        or pesquisadora_output is None
+        or assistente_output is None
     ):
         raise ValueError(
             "A Revisora precisa receber os resultados "
-            "da Professora e da Pesquisadora."
+            "da Professora e do Assistente."
         )
+
+    if not isinstance(user_request, UserRequest):
+        user_request = UserRequest.model_validate(user_request)
 
     entrada = RevisoraInput(
         user_request=user_request,
         professora_output=professora_output,
-        pesquisadora_output=pesquisadora_output,
+        assistente_output=assistente_output,
     )
 
     resultado = revisar_planejamento(entrada)
 
     return {
         "revisora_output": resultado,
-    }
-
-
-def executar_redatora(
-    state: PlanningGraphState,
-) -> dict[str, Any]:
-    """
-    Executa a agente Redatora.
-
-    Recebe todos os resultados anteriores e produz
-    o planejamento pedagógico semanal final.
-    """
-
-    user_request = state.get("user_request")
-    professora_output = state.get("professora_output")
-    pesquisadora_output = state.get("pesquisadora_output")
-    revisora_output = state.get("revisora_output")
-
-    if (
-        user_request is None
-        or professora_output is None
-        or pesquisadora_output is None
-        or revisora_output is None
-    ):
-        raise ValueError(
-            "A Redatora precisa receber os resultados "
-            "das três agentes anteriores."
-        )
-
-    entrada = RedatoraInput(
-        user_request=user_request,
-        professora_output=professora_output,
-        pesquisadora_output=pesquisadora_output,
-        revisora_output=revisora_output,
-    )
-
-    resultado = redigir_planejamento(entrada)
-
-    return {
-        "redatora_output": resultado,
+        "planning_status": "completed",
+        "error_message": None,
+        "validation_errors": [],
     }

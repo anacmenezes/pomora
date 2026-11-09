@@ -1,37 +1,72 @@
-
 from typing import Any, Literal, TypedDict
 
 from ...schemas.request import UserRequest
 from ...schemas.agent_outputs import (
     ProfessoraOutput,
-    PesquisadoraOutput,
+    AssistenteOutput,
     RevisoraOutput,
-    RedatoraOutput,
 )
 
+
+# ============================================================
+# STATUS DO PLANEJAMENTO
+# ============================================================
+
+PlanningStatus = Literal[
+    "ready",
+    "blocked",
+    "completed",
+]
+
+
+# ============================================================
+# ESTADO COMPARTILHADO DO PLANEJAMENTO
+# ============================================================
 
 class PlanningGraphState(TypedDict, total=False):
     """
     Estado compartilhado do fluxo de planejamento pedagógico.
 
-    Recebe a solicitação confirmada pelo Intake e
-    armazena os resultados das quatro agentes.
+    Recebe a solicitação confirmada pelo grafo da Márcia
+    e armazena os resultados das três agentes do planejamento:
+
+    1. Professora
+    2. Assistente
+    3. Revisora
+
+    O resultado final é armazenado em revisora_output.
     """
 
-    # Dados recebidos do grafo da Márcia
+    # --------------------------------------------------------
+    # DADOS RECEBIDOS DO GRAFO DA MARCIA
+    # --------------------------------------------------------
+
     intake_status: str | None
+
     validated_request: dict[str, Any] | None
 
-    # Solicitação convertida e validada pelo Pydantic
+    # --------------------------------------------------------
+    # SOLICITACAO VALIDADA
+    # --------------------------------------------------------
+
     user_request: UserRequest
 
-    # Controle da validação inicial
-    planning_status: Literal["ready", "blocked"]
+    # --------------------------------------------------------
+    # CONTROLE DO PLANEJAMENTO
+    # --------------------------------------------------------
+
+    planning_status: PlanningStatus
+
     error_message: str | None
+
     validation_errors: list[str]
 
-    # Resultados das agentes
+    # --------------------------------------------------------
+    # RESULTADOS DOS AGENTES
+    # --------------------------------------------------------
+
     professora_output: ProfessoraOutput
-    pesquisadora_output: PesquisadoraOutput
+
+    assistente_output: AssistenteOutput
+
     revisora_output: RevisoraOutput
-    redatora_output: RedatoraOutput

@@ -1,335 +1,273 @@
-
-from typing import Literal
-
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ...schemas.agent_outputs import (
+    DiaPlanejamentoFinal,
     RevisoraInput,
     RevisoraOutput,
-    RevisaoAtividade,
-    RevisaoDiaria,
     StatusRevisaoGeral,
 )
 from ..models.openai import get_openai_model
+from ..prompts.revisora_ppt import REVISORA_SYSTEM_PROMPT
 
 
 # ============================================================
-# SCHEMAS AUXILIARES
+# SCHEMAS AUXILIARES DA REVISAO
 # ============================================================
 
 
 class RevisaoDiaLLM(BaseModel):
-    """Resultado da avaliação do modelo para um único dia."""
+    """
+    Observacoes produzidas pela Revisora para um dia
+    do planejamento pedagogico.
+    """
 
-    model_config = ConfigDict(extra="forbid")
-
-    atividades: list[RevisaoAtividade] = Field(
-        min_length=1,
-        max_length=3,
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
     )
 
-    observacoes: list[str] = Field(
+    dia: int = Field(
+        ge=1,
+        le=5,
+        description="Numero do dia revisado, de 1 a 5.",
+    )
+
+    observacoes_revisao: list[str] = Field(
         default_factory=list,
         max_length=10,
+        description=(
+            "Problemas encontrados, ajustes recomendados ou "
+            "observacoes uteis para a execucao da atividade "
+            "e dos recursos de apoio."
+        ),
     )
 
 
 class RevisaoGeralLLM(BaseModel):
-    """Avaliação geral do planejamento semanal."""
+    """
+    Resultado estruturado da revisao pedagogica semanal.
 
-    model_config = ConfigDict(extra="forbid")
+    Este schema representa exclusivamente a avaliacao
+    produzida pelo modelo. A composicao do plano final
+    e realizada pelo Python.
+    """
 
-    status_geral: StatusRevisaoGeral
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+    )
+
+    apresentacao: str = Field(
+        min_length=20,
+        max_length=1000,
+        description="Apresentacao do planejamento semanal.",
+    )
+
+    status_revisao: StatusRevisaoGeral
 
     parecer_geral: str = Field(
         min_length=20,
         max_length=2000,
+        description="Parecer geral sobre o planejamento.",
     )
 
     avaliacao_pedagogica: str = Field(
         min_length=20,
         max_length=1500,
+        description="Avaliacao da coerencia pedagogica semanal.",
     )
 
     pontos_atencao: list[str] = Field(
         default_factory=list,
         max_length=15,
+        description="Pontos que merecem atencao antes da aplicacao.",
     )
 
-
-# ============================================================
-# REVISÃO INDIVIDUAL DOS DIAS
-# ============================================================
-
-
-def revisar_dia(
-    entrada: RevisoraInput,
-    dia: int,
-) -> RevisaoDiaria:
-    """
-    Revisa as atividades de um único dia.
-
-    Dias sem atividades são preenchidos diretamente pelo Python.
-    Dias com atividades são enviados individualmente ao modelo.
-    """
-
-    if dia not in range(1, 6):
-        raise ValueError("O dia deve estar entre 1 e 5.")
-
-    pesquisa = next(
-        (
-            item
-            for item in entrada.pesquisadora_output.pesquisas_diarias
-            if item.dia == dia
-        ),
-        None,
+    revisoes_diarias: list[RevisaoDiaLLM] = Field(
+        min_length=5,
+        max_length=5,
+        description="Observacoes especificas para cada um dos cinco dias.",
     )
 
-    estrategia = next(
-        (
-            item
-            for item in entrada.professora_output.estrategias_diarias
-            if item.dia == dia
-        ),
-        None,
-    )
-
-    if pesquisa is None or estrategia is None:
-        raise ValueError(
-            f"Não foram encontrados os dados necessários para o dia {dia}."
-        )
-
-    # Não chama o modelo quando não existem atividades.
-    if not pesquisa.atividades:
-        return RevisaoDiaria(
-            dia=dia,
-            status="sem_atividades",
-            atividades=[],
-            observacoes=[
-                pesquisa.justificativa
-                or "A pesquisa não encontrou atividades suficientes."
-            ],
-        )
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                """
-                Você é a Revisora pedagógica do POMORA.
-
-                Sua responsabilidade é avaliar criteriosamente
-                as atividades pedagógicas recebidas.
-
-                Analise cada atividade considerando:
-
-                1. ALINHAMENTO PEDAGÓGICO
-                - Relação com o objetivo específico do dia.
-                - Adequação à faixa etária.
-                - Coerência com a estratégia da Professora.
-
-                2. SEGURANÇA
-                - Riscos físicos, químicos e biológicos.
-                - Adequação dos materiais.
-                - Necessidade de supervisão adulta.
-                - Cuidados necessários para a idade das crianças.
-
-                3. VIABILIDADE
-                - Disponibilidade dos materiais.
-                - Clareza das etapas.
-                - Compatibilidade com as restrições informadas.
-
-                4. INCLUSÃO
-                - Possibilidade de participação de todas as crianças.
-                - Adequação das adaptações propostas.
-                - Barreiras que possam impedir a participação.
-
-                5. RASTREABILIDADE
-                - Verifique se as evidências sustentam a atividade.
-                - Não atribua às fontes informações não apresentadas.
-                - Não invente fontes ou evidências.
-
-                Utilize exclusivamente os seguintes status:
-
-                - aprovada
-                - ajustes_necessarios
-                - reprovada
-
-                Para atividades com status ajustes_necessarios,
-                apresente recomendações concretas em
-                ajustes_recomendados.
-
-                Preserve os IDs originais das atividades.
-
-                Retorne todas as atividades recebidas,
-                uma única vez cada.
-
-                Não crie atividades.
-                Não invente informações.
-                Não omita atividades da avaliação.
-                """
-            ),
-            (
-                "human",
-                """
-                SOLICITAÇÃO DO USUÁRIO:
-
-                {user_request}
-
-                ESTRATÉGIA PEDAGÓGICA DO DIA:
-
-                {estrategia}
-
-                RESULTADOS DA PESQUISA:
-
-                {pesquisa}
-                """
-            ),
+    @model_validator(mode="after")
+    def validar_sequencia_dias(self):
+        dias = [
+            revisao.dia
+            for revisao in self.revisoes_diarias
         ]
-    )
 
-    modelo = get_openai_model().with_structured_output(
-        RevisaoDiaLLM,
-        method="function_calling",
-    )
+        if dias != [1, 2, 3, 4, 5]:
+            raise ValueError(
+                "A revisao deve apresentar exatamente os cinco dias, "
+                "em ordem de 1 a 5."
+            )
 
-    cadeia = prompt | modelo
+        return self
 
-    resultado = cadeia.invoke(
-        {
-            "user_request": entrada.user_request.model_dump_json(
-                indent=2
-            ),
-            "estrategia": estrategia.model_dump_json(
-                indent=2
-            ),
-            "pesquisa": pesquisa.model_dump_json(
-                indent=2
-            ),
-        }
-    )
 
-    # --------------------------------------------------------
-    # VALIDAÇÃO DOS IDs
-    # --------------------------------------------------------
+# ============================================================
+# VALIDACAO DOS DADOS DE ENTRADA
+# ============================================================
 
-    ids_esperados = [
-        atividade.id
-        for atividade in pesquisa.atividades
+
+def _validar_dados_entrada(
+    entrada: RevisoraInput,
+) -> None:
+    """
+    Verifica se o planejamento da Professora e os recursos
+    do Assistente apresentam os mesmos cinco dias.
+    """
+
+    dias_planejamento = [
+        atividade.dia
+        for atividade in entrada.professora_output.atividades_diarias
     ]
 
-    ids_recebidos = [
-        atividade.atividade_id
-        for atividade in resultado.atividades
+    dias_recursos = [
+        recursos.dia
+        for recursos in entrada.assistente_output.recursos_diarios
     ]
 
-    if (
-        len(ids_esperados) != len(ids_recebidos)
-        or set(ids_esperados) != set(ids_recebidos)
-    ):
+    if dias_planejamento != [1, 2, 3, 4, 5]:
         raise ValueError(
-            f"Dia {dia}: os IDs das atividades revisadas "
-            "não correspondem exatamente aos IDs recebidos."
+            "O planejamento da Professora deve conter "
+            "exatamente os dias 1 a 5, em ordem."
         )
 
-    # --------------------------------------------------------
-    # DEFINIÇÃO DO STATUS DIÁRIO
-    # --------------------------------------------------------
+    if dias_recursos != [1, 2, 3, 4, 5]:
+        raise ValueError(
+            "Os recursos do Assistente devem conter "
+            "exatamente os dias 1 a 5, em ordem."
+        )
 
-    status_atividades = {
-        atividade.status
-        for atividade in resultado.atividades
+
+# ============================================================
+# CONSTRUCAO DOS DIAS DO PLANEJAMENTO FINAL
+# ============================================================
+
+
+def _construir_dias_finais(
+    entrada: RevisoraInput,
+    revisao_llm: RevisaoGeralLLM,
+) -> list[DiaPlanejamentoFinal]:
+    """
+    Combina as atividades da Professora, os recursos do Assistente
+    e as observacoes produzidas pela Revisora.
+
+    Os dados originais dos agentes sao preservados.
+    A Revisora nao reescreve nem inventa atividades ou recursos.
+    """
+
+    recursos_por_dia = {
+        recursos.dia: recursos
+        for recursos in entrada.assistente_output.recursos_diarios
     }
 
-    if "reprovada" in status_atividades:
-        status_dia = "reprovado"
+    observacoes_por_dia = {
+        revisao.dia: revisao.observacoes_revisao
+        for revisao in revisao_llm.revisoes_diarias
+    }
 
-    elif "ajustes_necessarios" in status_atividades:
-        status_dia = "aprovado_com_ressalvas"
+    dias_finais: list[DiaPlanejamentoFinal] = []
 
-    else:
-        status_dia = "aprovado"
+    for atividade in entrada.professora_output.atividades_diarias:
 
-    return RevisaoDiaria(
-        dia=dia,
-        status=status_dia,
-        atividades=resultado.atividades,
-        observacoes=resultado.observacoes,
-    )
+        dia = atividade.dia
+
+        recursos = recursos_por_dia.get(dia)
+
+        if recursos is None:
+            raise ValueError(
+                f"Nao foram encontrados recursos do Assistente "
+                f"para o dia {dia}."
+            )
+
+        observacoes = observacoes_por_dia.get(dia)
+
+        if observacoes is None:
+            raise ValueError(
+                f"Nao foram encontradas observacoes da Revisora "
+                f"para o dia {dia}."
+            )
+
+        dia_final = DiaPlanejamentoFinal(
+            dia=dia,
+            atividade=atividade,
+            recursos=recursos,
+            observacoes_revisao=observacoes,
+        )
+
+        dias_finais.append(dia_final)
+
+    if len(dias_finais) != 5:
+        raise ValueError(
+            "O planejamento final deve conter exatamente cinco dias."
+        )
+
+    return dias_finais
 
 
 # ============================================================
-# AVALIAÇÃO GERAL DO PLANEJAMENTO
+# CADEIA DE REVISAO
 # ============================================================
 
 
-def revisar_geral(
-    entrada: RevisoraInput,
-    revisoes_diarias: list[RevisaoDiaria],
-) -> RevisaoGeralLLM:
+def criar_cadeia_revisora():
     """
-    Avalia a coerência pedagógica e a qualidade geral
-    do planejamento semanal.
+    Cria a cadeia responsavel por revisar o planejamento
+    pedagogico e os materiais de apoio.
     """
 
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                """
-                Você é a Revisora geral do POMORA.
-
-                Avalie o planejamento pedagógico semanal considerando:
-
-                1. Coerência entre o objetivo geral e os objetivos
-                   específicos.
-                2. Adequação da progressão pedagógica dos cinco dias.
-                3. Alinhamento entre as estratégias da Professora
-                   e as atividades pesquisadas.
-                4. Segurança e viabilidade do planejamento.
-                5. Inclusão e participação das crianças.
-                6. Qualidade e rastreabilidade das evidências.
-
-                Considere também os resultados das revisões diárias.
-
-                Utilize exclusivamente:
-
-                - aprovado: planejamento adequado e utilizável.
-                - aprovado_com_ressalvas: planejamento utilizável
-                  após os ajustes necessários.
-                - reprovado: existem problemas relevantes que
-                  impedem a utilização do planejamento.
-
-                Não considere um planejamento completo quando
-                houver dias sem atividades suficientes.
-
-                Não invente informações, atividades ou evidências.
-
-                Esta avaliação é exclusivamente geral.
-                Não gere revisões diárias.
-                """
+                REVISORA_SYSTEM_PROMPT,
             ),
             (
                 "human",
                 """
-                SOLICITAÇÃO DO USUÁRIO:
+                SOLICITACAO VALIDADA DO USUARIO:
 
                 {user_request}
 
-                PLANEJAMENTO DA PROFESSORA:
+                PLANEJAMENTO PEDAGOGICO DA PROFESSORA:
 
                 {professora_output}
 
-                RESULTADOS DA PESQUISADORA:
+                MATERIAIS DE APOIO DO ASSISTENTE:
 
-                {pesquisadora_output}
+                {assistente_output}
 
-                REVISÕES DIÁRIAS JÁ REALIZADAS:
+                Revise o planejamento e os recursos como um conjunto.
 
-                {revisoes_diarias}
+                Considere a coerencia pedagogica, a adequacao a faixa
+                etaria, a seguranca, a inclusao e a viabilidade.
 
-                Gere o parecer geral do planejamento.
+                Avalie tambem a relacao entre cada atividade e seus
+                respectivos materiais de apoio.
+
+                Preserve os dados originais produzidos pela Professora
+                e pelo Assistente.
+
+                Produza:
+
+                - Apresentacao do planejamento.
+                - Status geral da revisao.
+                - Parecer geral.
+                - Avaliacao pedagogica.
+                - Pontos de atencao.
+                - Observacoes especificas para os cinco dias.
+
+                Retorne exatamente cinco revisoes diarias,
+                na ordem de 1 a 5.
+
+                Quando um dia nao apresentar problemas relevantes,
+                utilize uma lista vazia em observacoes_revisao.
+
+                Nao crie atividades nem recursos.
+                Nao invente informacoes.
                 """
             ),
         ]
@@ -340,29 +278,11 @@ def revisar_geral(
         method="function_calling",
     )
 
-    cadeia = prompt | modelo
-
-    return cadeia.invoke(
-        {
-            "user_request": entrada.user_request.model_dump_json(
-                indent=2
-            ),
-            "professora_output": entrada.professora_output.model_dump_json(
-                indent=2
-            ),
-            "pesquisadora_output": entrada.pesquisadora_output.model_dump_json(
-                indent=2
-            ),
-            "revisoes_diarias": [
-                revisao.model_dump(mode="json")
-                for revisao in revisoes_diarias
-            ],
-        }
-    )
+    return prompt | modelo
 
 
 # ============================================================
-# FUNÇÃO PRINCIPAL DA REVISORA
+# FUNCAO PRINCIPAL DA REVISO RA
 # ============================================================
 
 
@@ -370,65 +290,119 @@ def revisar_planejamento(
     entrada: RevisoraInput,
 ) -> RevisoraOutput:
     """
-    Executa a revisão completa do planejamento semanal.
+    Executa a revisao e a consolidacao do planejamento semanal.
 
-    1. Revisa individualmente os cinco dias.
-    2. Avalia o planejamento geral.
-    3. Monta e valida o RevisoraOutput final.
+    Etapas:
+
+    1. Valida os dados recebidos.
+    2. Revisa o planejamento da Professora.
+    3. Revisa os recursos do Assistente.
+    4. Combina atividades, recursos e observacoes.
+    5. Retorna o planejamento final validado pelo Pydantic.
     """
 
     # --------------------------------------------------------
-    # 1. REVISÃO DOS CINCO DIAS
+    # 1. VALIDACAO DOS DADOS DE ENTRADA
     # --------------------------------------------------------
 
-    revisoes_diarias = [
-        revisar_dia(entrada, dia)
-        for dia in range(1, 6)
-    ]
+    _validar_dados_entrada(entrada)
 
     # --------------------------------------------------------
-    # 2. AVALIAÇÃO GERAL
+    # 2. CRIACAO DA CADEIA
     # --------------------------------------------------------
 
-    avaliacao_geral = revisar_geral(
+    cadeia = criar_cadeia_revisora()
+
+    # --------------------------------------------------------
+    # 3. EXECUCAO DA REVISAO
+    # --------------------------------------------------------
+
+    resultado = cadeia.invoke(
+        {
+            "user_request": (
+                entrada.user_request.model_dump_json(
+                    indent=2,
+                )
+            ),
+
+            "professora_output": (
+                entrada.professora_output.model_dump_json(
+                    indent=2,
+                )
+            ),
+
+            "assistente_output": (
+                entrada.assistente_output.model_dump_json(
+                    indent=2,
+                )
+            ),
+        }
+    )
+
+    # --------------------------------------------------------
+    # 4. VALIDACAO DO RETORNO DO MODELO
+    # --------------------------------------------------------
+
+    if not isinstance(resultado, RevisaoGeralLLM):
+        resultado = RevisaoGeralLLM.model_validate(resultado)
+
+    # --------------------------------------------------------
+    # 5. CONSTRUCAO DOS CINCO DIAS
+    # --------------------------------------------------------
+
+    dias_finais = _construir_dias_finais(
         entrada=entrada,
-        revisoes_diarias=revisoes_diarias,
+        revisao_llm=resultado,
     )
 
     # --------------------------------------------------------
-    # 3. VALIDAÇÃO DO STATUS GERAL
+    # 6. COMPOSICAO DO PLANEJAMENTO FINAL
     # --------------------------------------------------------
 
-    status_geral = avaliacao_geral.status_geral
+    plano_final = RevisoraOutput(
+        contexto=entrada.user_request,
 
-    existe_dia_incompleto = any(
-        revisao.status in (
-            "sem_atividades",
-            "reprovado",
-        )
-        for revisao in revisoes_diarias
-    )
+        apresentacao=resultado.apresentacao,
 
-    # Um planejamento com dias incompletos ou reprovados
-    # não pode receber aprovação integral.
-    if (
-        status_geral == "aprovado"
-        and existe_dia_incompleto
-    ):
-        status_geral = "aprovado_com_ressalvas"
-
-    # --------------------------------------------------------
-    # 4. COMPOSIÇÃO DO RESULTADO FINAL
-    # --------------------------------------------------------
-
-    resultado = RevisoraOutput(
-        status_geral=status_geral,
-        parecer_geral=avaliacao_geral.parecer_geral,
-        avaliacao_pedagogica=(
-            avaliacao_geral.avaliacao_pedagogica
+        objetivo_geral=(
+            entrada.professora_output.objetivo_geral
         ),
-        pontos_atencao=avaliacao_geral.pontos_atencao,
-        revisoes_diarias=revisoes_diarias,
+
+        objetivos_especificos=(
+            entrada.professora_output.objetivos_especificos
+        ),
+
+        justificativa_pedagogica=(
+            entrada.professora_output.justificativa_pedagogica
+        ),
+
+        progressao_semanal=(
+            entrada.professora_output.progressao_semanal
+        ),
+
+        vocabulario_semana=(
+            entrada.professora_output.vocabulario_semana
+        ),
+
+        materiais_gerais=(
+            entrada.professora_output.materiais_gerais
+        ),
+
+        orientacoes_gerais=(
+            entrada.professora_output.orientacoes_gerais
+        ),
+
+        status_revisao=resultado.status_revisao,
+
+        parecer_geral=resultado.parecer_geral,
+
+        avaliacao_pedagogica=(
+            resultado.avaliacao_pedagogica
+        ),
+
+        pontos_atencao=resultado.pontos_atencao,
+
+        dias=dias_finais,
     )
 
-    return resultado
+    return plano_final

@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 from pydantic import SecretStr
@@ -9,8 +8,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
-    serper_api_key: SecretStr | None = None
-    """Configurações centralizadas da aplicação POMORA."""
+    """
+    Configurações centralizadas da aplicação POMORA.
+    """
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     )
 
     openai_api_key: SecretStr
+
     openai_model: str = "gpt-4.1-mini"
 
 
