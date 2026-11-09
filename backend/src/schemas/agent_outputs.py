@@ -699,3 +699,271 @@ class RevisoraOutput(BaseModel):
             )
 
         return self
+
+
+# ============================================================
+# REDATORA
+# ============================================================
+
+StatusPesquisaRedatora = Literal[
+    "resultados_encontrados",
+    "sem_resultados_suficientes",
+]
+
+
+class RedatoraInput(BaseModel):
+    """Dados completos recebidos pela agente Redatora."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_request: UserRequest
+    professora_output: ProfessoraOutput
+    pesquisadora_output: PesquisadoraOutput
+    revisora_output: RevisoraOutput
+
+    @model_validator(mode="after")
+    def validar_consistencia_dos_resultados(self):
+        pesquisas = {
+            item.dia: item
+            for item in self.pesquisadora_output.pesquisas_diarias
+        }
+        revisoes = {
+            item.dia: item
+            for item in self.revisora_output.revisoes_diarias
+        }
+
+        if set(pesquisas) != {1, 2, 3, 4, 5}:
+            raise ValueError(
+                "A pesquisa deve conter os cinco dias."
+            )
+
+        if set(revisoes) != {1, 2, 3, 4, 5}:
+            raise ValueError(
+                "A revisão deve conter os cinco dias."
+            )
+
+        for dia in range(1, 6):
+            ids_pesquisa = {
+                atividade.id
+                for atividade in pesquisas[dia].atividades
+            }
+
+            ids_revisao = {
+                atividade.atividade_id
+                for atividade in revisoes[dia].atividades
+            }
+
+            if ids_pesquisa != ids_revisao:
+                raise ValueError(
+                    f"Dia {dia}: os IDs das atividades pesquisadas "
+                    "não correspondem aos IDs revisados."
+                )
+
+        return self
+
+
+class AtividadeRedigida(BaseModel):
+    """Atividade original associada à sua avaliação."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    atividade: AtividadePesquisada
+    revisao: RevisaoAtividade
+
+    @model_validator(mode="after")
+    def validar_identidade_da_atividade(self):
+        if self.atividade.id != self.revisao.atividade_id:
+            raise ValueError(
+                "A atividade e sua revisão devem possuir o mesmo ID."
+            )
+
+        return self
+
+
+class DiaPlanejamentoRedigido(BaseModel):
+    """Planejamento estruturado de um dia da semana."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    dia: int = Field(ge=1, le=5)
+
+    estrategia: EstrategiaDiaria
+
+    status_pesquisa: StatusPesquisaRedatora
+
+    status_revisao: StatusDia
+
+    atividades: list[AtividadeRedigida] = Field(
+        default_factory=list,
+        max_length=3,
+    )
+
+    justificativa_pesquisa: str | None = Field(
+        default=None,
+        max_length=1000,
+    )
+
+    observacoes_revisao: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+    )
+
+    @model_validator(mode="after")
+    def validar_dia(self):
+        if self.estrategia.dia != self.dia:
+            raise ValueError(
+                "O dia da estratégia deve corresponder ao dia do planejamento."
+            )
+
+        if self.status_pesquisa == "sem_resultados_suficientes":
+            if self.atividades:
+                raise ValueError(
+                    "Um dia sem resultados suficientes não pode "
+                    "apresentar atividades."
+                )
+
+            if self.status_revisao != "sem_atividades":
+                raise ValueError(
+                    "Um dia sem atividades deve possuir status "
+                    "sem_atividades na revisão."
+                )
+
+            if not self.justificativa_pesquisa:
+                raise ValueError(
+                    "Informe a justificativa para a ausência de atividades."
+                )
+
+        if self.status_pesquisa == "resultados_encontrados":
+            if not self.atividades:
+                raise ValueError(
+                    "Resultados encontrados devem apresentar atividades."
+                )
+
+            if self.status_revisao == "sem_atividades":
+                raise ValueError(
+                    "Um dia com atividades não pode ter status sem_atividades."
+                )
+
+        ids = [
+            item.atividade.id
+            for item in self.atividades
+        ]
+
+        if len(ids) != len(set(ids)):
+            raise ValueError(
+                "Não é permitido repetir atividades no mesmo dia."
+            )
+
+        return self
+
+
+class RedatoraOutput(BaseModel):
+    """Planejamento pedagógico semanal final do POMORA."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    contexto: UserRequest
+
+    apresentacao: str = Field(
+        min_length=20,
+        max_length=1000,
+    )
+
+    objetivo_geral: str = Field(
+        min_length=10,
+        max_length=500,
+    )
+
+    objetivos_especificos: list[str] = Field(
+        min_length=2,
+        max_length=8,
+    )
+
+    justificativa_pedagogica: str = Field(
+        min_length=20,
+        max_length=1000,
+    )
+
+    progressao_semanal: str = Field(
+        min_length=20,
+        max_length=1000,
+    )
+
+    criterios_selecao_atividades: list[str] = Field(
+        min_length=3,
+        max_length=10,
+    )
+
+    orientacoes_gerais: list[str] = Field(
+        min_length=3,
+        max_length=10,
+    )
+
+    status_geral: StatusRevisaoGeral
+
+    parecer_geral: str = Field(
+        min_length=20,
+        max_length=2000,
+    )
+
+    avaliacao_pedagogica: str = Field(
+        min_length=20,
+        max_length=1500,
+    )
+
+    pontos_atencao: list[str] = Field(
+        default_factory=list,
+        max_length=15,
+    )
+
+    dias: list[DiaPlanejamentoRedigido] = Field(
+        min_length=5,
+        max_length=5,
+    )
+
+    fontes: list[FontePesquisa] = Field(
+        default_factory=list,
+        max_length=50,
+    )
+
+    @model_validator(mode="after")
+    def validar_planejamento_final(self):
+        dias = [item.dia for item in self.dias]
+
+        if dias != [1, 2, 3, 4, 5]:
+            raise ValueError(
+                "O planejamento deve conter exatamente os dias "
+                "1, 2, 3, 4 e 5, nessa ordem."
+            )
+
+        ids_atividades = [
+            item.atividade.id
+            for dia in self.dias
+            for item in dia.atividades
+        ]
+
+        if len(ids_atividades) != len(set(ids_atividades)):
+            raise ValueError(
+                "Os IDs das atividades devem ser únicos no planejamento."
+            )
+
+        ids_fontes = [fonte.id for fonte in self.fontes]
+
+        if len(ids_fontes) != len(set(ids_fontes)):
+            raise ValueError(
+                "Os IDs das fontes devem ser únicos."
+            )
+
+        fontes_disponiveis = set(ids_fontes)
+
+        for dia in self.dias:
+            for item in dia.atividades:
+                fontes_utilizadas = set(item.atividade.fontes_ids)
+
+                if not fontes_utilizadas.issubset(fontes_disponiveis):
+                    raise ValueError(
+                        f"A atividade {item.atividade.id} utiliza "
+                        "fontes que não estão no planejamento final."
+                    )
+
+        return self
