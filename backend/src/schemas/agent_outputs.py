@@ -538,3 +538,164 @@ class PesquisadoraOutput(BaseModel):
                     )
 
         return self
+
+
+# ============================================================
+# REVISORA
+# ============================================================
+
+StatusAtividade = Literal[
+    "aprovada",
+    "ajustes_necessarios",
+    "reprovada",
+]
+
+StatusDia = Literal[
+    "aprovado",
+    "aprovado_com_ressalvas",
+    "reprovado",
+    "sem_atividades",
+]
+
+StatusRevisaoGeral = Literal[
+    "aprovado",
+    "aprovado_com_ressalvas",
+    "reprovado",
+]
+
+
+class RevisoraInput(BaseModel):
+    """Dados recebidos pela agente Revisora."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_request: UserRequest
+    professora_output: ProfessoraOutput
+    pesquisadora_output: PesquisadoraOutput
+
+
+class RevisaoAtividade(BaseModel):
+    """Parecer da Revisora sobre uma atividade pesquisada."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    atividade_id: str = Field(
+        min_length=1,
+        max_length=50,
+    )
+
+    status: StatusAtividade
+
+    justificativa: str = Field(
+        min_length=10,
+        max_length=1000,
+        description="Justificativa da decisão tomada.",
+    )
+
+    ajustes_recomendados: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="Ajustes necessários antes de utilizar a atividade.",
+    )
+
+    @model_validator(mode="after")
+    def validar_ajustes(self):
+        if (
+            self.status == "ajustes_necessarios"
+            and not self.ajustes_recomendados
+        ):
+            raise ValueError(
+                "Atividades que precisam de ajustes devem "
+                "apresentar recomendações."
+            )
+
+        return self
+
+
+class RevisaoDiaria(BaseModel):
+    """Resultado da revisão das atividades de um dia."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    dia: int = Field(ge=1, le=5)
+
+    status: StatusDia
+
+    atividades: list[RevisaoAtividade] = Field(
+        default_factory=list,
+        max_length=3,
+    )
+
+    observacoes: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+    )
+
+    @model_validator(mode="after")
+    def validar_atividades(self):
+        if self.status == "sem_atividades" and self.atividades:
+            raise ValueError(
+                "Um dia sem atividades não pode apresentar revisões."
+            )
+
+        if self.status != "sem_atividades" and not self.atividades:
+            raise ValueError(
+                "Dias com outro status devem apresentar "
+                "pelo menos uma atividade revisada."
+            )
+
+        ids = [atividade.atividade_id for atividade in self.atividades]
+
+        if len(ids) != len(set(ids)):
+            raise ValueError(
+                "Não é permitido repetir atividades na revisão diária."
+            )
+
+        return self
+
+
+class RevisoraOutput(BaseModel):
+    """Parecer final da Revisora sobre o planejamento semanal."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status_geral: StatusRevisaoGeral
+
+    parecer_geral: str = Field(
+        min_length=20,
+        max_length=2000,
+    )
+
+    avaliacao_pedagogica: str = Field(
+        min_length=20,
+        max_length=1500,
+        description=(
+            "Avaliação da coerência pedagógica e da adequação "
+            "do planejamento semanal."
+        ),
+    )
+
+    pontos_atencao: list[str] = Field(
+        default_factory=list,
+        max_length=15,
+    )
+
+    revisoes_diarias: list[RevisaoDiaria] = Field(
+        min_length=5,
+        max_length=5,
+    )
+
+    @model_validator(mode="after")
+    def validar_sequencia_dias(self):
+        dias = [
+            revisao.dia
+            for revisao in self.revisoes_diarias
+        ]
+
+        if dias != [1, 2, 3, 4, 5]:
+            raise ValueError(
+                "A revisão deve apresentar exatamente os cinco dias, "
+                "em ordem de 1 a 5."
+            )
+
+        return self
