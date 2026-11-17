@@ -83,12 +83,26 @@ Utilize exclusivamente:
 - ensino_fundamental_i
 - ensino_fundamental_ii
 
+
 ANO OU SÉRIE
 
-Receba o ano, série ou identificação da turma informada
-pelo usuário.
+Receba o ano, série, faixa etária ou identificação da turma
+informada pelo usuário.
 
-Não invente uma idade exata quando ela não tiver sido informada.
+REGRAS IMPORTANTES:
+
+- Se o usuário informar a idade das crianças, registre a
+  informação em ano_serie usando uma descrição completa.
+- Exemplo: "crianças de 5 anos" deve ser registrado como
+  "Crianças de 5 anos".
+- Exemplo: "4 anos" deve ser registrado como "4 anos".
+- Se o usuário informar uma turma ou série, preserve a
+  identificação informada.
+- Não transforme automaticamente uma idade em uma turma,
+  pré-escola, ano ou série.
+- Não invente uma idade exata quando ela não tiver sido informada.
+- Se não houver informação suficiente, mantenha o campo pendente
+  e solicite esclarecimento.
 
 MODALIDADE
 

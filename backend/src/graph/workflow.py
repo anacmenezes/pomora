@@ -1,7 +1,7 @@
 
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 
+from .checkpointer import postgres_checkpointer
 from .edges import (
     route_after_completeness,
     route_after_confirmation,
@@ -20,13 +20,12 @@ def criar_workflow_intake(checkpointer=None):
     """
     Cria o fluxo conversacional da Márcia.
 
-    O checkpointer permite preservar o estado entre
-    diferentes mensagens da mesma conversa.
+    Utiliza o PostgreSQL para preservar o estado
+    das conversas entre diferentes mensagens e reinicializações.
     """
 
     builder = StateGraph(IntakeGraphState)
 
-    # Registro dos nós
     builder.add_node(
         "processar_mensagem",
         processar_mensagem_usuario,
@@ -47,10 +46,8 @@ def criar_workflow_intake(checkpointer=None):
         validar_confirmacao,
     )
 
-    # Ponto inicial
     builder.add_edge(START, "processar_mensagem")
 
-    # Roteamento após a interpretação da Márcia
     builder.add_conditional_edges(
         "processar_mensagem",
         route_after_message,
@@ -62,7 +59,6 @@ def criar_workflow_intake(checkpointer=None):
         },
     )
 
-    # Roteamento após verificar os campos obrigatórios
     builder.add_conditional_edges(
         "verificar_completude",
         route_after_completeness,
@@ -73,10 +69,8 @@ def criar_workflow_intake(checkpointer=None):
         },
     )
 
-    # Após preparar o resumo, aguarda a próxima mensagem
     builder.add_edge("preparar_confirmacao", END)
 
-    # Roteamento após validar a decisão do usuário
     builder.add_conditional_edges(
         "validar_confirmacao",
         route_after_confirmation,
@@ -87,11 +81,12 @@ def criar_workflow_intake(checkpointer=None):
         },
     )
 
-    # Checkpointer padrão para desenvolvimento e testes
-    saver = checkpointer or InMemorySaver()
+    saver = (
+        checkpointer
+        if checkpointer is not None
+        else postgres_checkpointer
+    )
 
     return builder.compile(checkpointer=saver)
 
-
-# Instância compartilhada durante a execução da aplicação
 intake_graph = criar_workflow_intake()

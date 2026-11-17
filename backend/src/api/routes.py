@@ -7,15 +7,23 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from sqlalchemy import Column, DateTime, Integer, JSON, String, func
 from sqlalchemy.orm import Session
 
-from api.database import Base, get_db
-from api import services
-from schemas.request import UserRequest
+from .database import Base, get_db
+from . import services
+from ..schemas.request import UserRequest
 
 
 class Solicitacao(Base):
     __tablename__ = "solicitacoes"
 
     id = Column(Integer, primary_key=True, index=True)
+
+    thread_id = Column(
+        String(255),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+
     dados = Column(JSON, nullable=False)
     status = Column(String(30), nullable=False, default="recebida")
 
@@ -32,8 +40,10 @@ class Solicitacao(Base):
         nullable=False,
     )
 
+
 class SolicitacaoCreate(BaseModel):
     dados: UserRequest
+    thread_id: str | None = None
 
 
 class SolicitacaoUpdate(BaseModel):
@@ -43,12 +53,14 @@ class SolicitacaoUpdate(BaseModel):
 
 class SolicitacaoResponse(BaseModel):
     id: int
+    thread_id: str | None = None
     dados: UserRequest
     status: str
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
 
 def create_crud_routes(
     model,
@@ -158,6 +170,7 @@ def create_crud_routes(
         services.delete(db, record)
 
     return crud_router
+
 
 router = APIRouter()
 

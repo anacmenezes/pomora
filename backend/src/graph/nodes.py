@@ -10,10 +10,6 @@ from ..schemas.request import Idioma, UserRequest
 from .state import IntakeGraphState
 
 
-# ============================================================
-# LABELS PARA APRESENTACAO DOS DADOS
-# ============================================================
-
 ESCOLARIDADE_LABELS = {
     "educacao_infantil": "Educação Infantil",
     "ensino_fundamental_i": "Ensino Fundamental I",
@@ -25,25 +21,16 @@ MODALIDADE_LABELS = {
     "coletiva": "Coletiva",
 }
 
+def formatar_erros_validacao(exc):
+    erros = []
 
-# ============================================================
-# FORMATACAO DE ERROS
-# ============================================================
+    for error in exc.errors(include_input=False):
+        campo = ".".join(str(item) for item in error["loc"])
+        mensagem = error["msg"]
 
-def formatar_erros_validacao(
-    exc: ValidationError,
-) -> list[str]:
-    """Converte os erros do Pydantic em mensagens compreensíveis."""
+        erros.append(f"Campo '{campo}': {mensagem}")
 
-    return [
-        error["msg"].removeprefix("Value error, ")
-        for error in exc.errors(include_input=False)
-    ]
-
-
-# ============================================================
-# RECUPERACAO DO INTAKE DRAFT
-# ============================================================
+    return erros
 
 def obter_intake_draft(
     state: IntakeGraphState,
@@ -55,11 +42,6 @@ def obter_intake_draft(
     intake_data = state.get("intake_data") or {}
 
     return IntakeDraft.model_validate(intake_data)
-
-
-# ============================================================
-# PROCESSAMENTO DA MENSAGEM DO USUARIO
-# ============================================================
 
 def processar_mensagem_usuario(
     state: IntakeGraphState,
@@ -97,7 +79,6 @@ def processar_mensagem_usuario(
 
     status_atual = state.get("status", "collecting")
 
-    # Solicitações já finalizadas não podem ser alteradas.
     if status_atual in ("confirmed", "cancelled"):
         return {
             "response": (
@@ -114,10 +95,6 @@ def processar_mensagem_usuario(
 
     draft = obter_intake_draft(state)
 
-    # --------------------------------------------------------
-    # 1. ENTRADA PARA A MARCIA
-    # --------------------------------------------------------
-
     entrada = MarciaInput(
         user_message=ultima_mensagem.content,
         current_data=draft.model_dump(
@@ -131,16 +108,11 @@ def processar_mensagem_usuario(
 
     resultado = interpretar_mensagem(entrada)
 
-    # --------------------------------------------------------
-    # 2. APLICACAO DAS ATUALIZACOES
-    # --------------------------------------------------------
-
     novos_dados = draft.model_dump(
         mode="json",
         exclude_none=True,
     )
 
-    # Uma solicitação cancelada não deve aplicar alterações.
     cancelar_sem_alterar = (
         etapa == "awaiting_confirmation"
         and resultado.confirmation_decision == "cancel"
@@ -155,13 +127,6 @@ def processar_mensagem_usuario(
     for campo in campos_para_atualizar:
         novos_dados[campo] = resultado.updates[campo]
 
-    # --------------------------------------------------------
-    # INFERENCIA DETERMINISTICA DA MODALIDADE
-    # --------------------------------------------------------
-
-    # A modalidade é determinada pela quantidade quando
-    # o usuário ainda não informou esse campo.
-
     if (
         novos_dados.get("modalidade") is None
         and novos_dados.get("quantidade_criancas") is not None
@@ -171,10 +136,6 @@ def processar_mensagem_usuario(
         novos_dados["modalidade"] = (
             "individual" if quantidade == 1 else "coletiva"
         )
-
-    # --------------------------------------------------------
-    # 3. VALIDACAO DO RASCUNHO
-    # --------------------------------------------------------
 
     try:
         draft_atualizado = IntakeDraft.model_validate(novos_dados)
@@ -196,9 +157,6 @@ def processar_mensagem_usuario(
         or ""
     )
 
-    # --------------------------------------------------------
-    # 4. ESTADO ATUALIZADO
-    # --------------------------------------------------------
 
     atualizacao = {
         "intake_data": draft_atualizado.model_dump(
@@ -210,10 +168,6 @@ def processar_mensagem_usuario(
         "validated_request": None,
         "response": resposta,
     }
-
-    # --------------------------------------------------------
-    # 5. TRATAMENTO DA ETAPA DE CONFIRMACAO
-    # --------------------------------------------------------
 
     if etapa == "awaiting_confirmation":
 
@@ -271,10 +225,6 @@ def processar_mensagem_usuario(
                 or "Você deseja confirmar, corrigir ou cancelar?"
             )
 
-    # --------------------------------------------------------
-    # 6. TRATAMENTO DA ETAPA DE COLETA
-    # --------------------------------------------------------
-
     else:
 
         atualizacao["status"] = (
@@ -286,11 +236,6 @@ def processar_mensagem_usuario(
         atualizacao["confirmation_decision"] = None
 
     return atualizacao
-
-
-# ============================================================
-# VERIFICACAO DE COMPLETUDE
-# ============================================================
 
 def verificar_completude(
     state: IntakeGraphState,
@@ -317,10 +262,6 @@ def verificar_completude(
             "pending_fields": campos_pendentes,
             "validated_request": None,
         }
-
-    # --------------------------------------------------------
-    # VALIDACAO FINAL DOS DADOS
-    # --------------------------------------------------------
 
     try:
 
@@ -351,11 +292,6 @@ def verificar_completude(
         "validated_request": None,
     }
 
-
-# ============================================================
-# PREPARACAO DA CONFIRMACAO
-# ============================================================
-
 def preparar_confirmacao(
     state: IntakeGraphState,
 ) -> dict[str, Any]:
@@ -372,10 +308,6 @@ def preparar_confirmacao(
         mode="json",
         exclude_none=True,
     )
-
-    # --------------------------------------------------------
-    # VALIDACAO DO USER REQUEST
-    # --------------------------------------------------------
 
     try:
 
@@ -398,10 +330,6 @@ def preparar_confirmacao(
         }
 
     dados = request.model_dump(mode="json")
-
-    # --------------------------------------------------------
-    # FORMATACAO DOS DADOS
-    # --------------------------------------------------------
 
     escolaridade = ESCOLARIDADE_LABELS.get(
         dados["escolaridade"],
@@ -451,11 +379,6 @@ def preparar_confirmacao(
         "validated_request": None,
     }
 
-
-# ============================================================
-# VALIDACAO DA CONFIRMACAO
-# ============================================================
-
 def validar_confirmacao(
     state: IntakeGraphState,
 ) -> dict[str, Any]:
@@ -468,10 +391,6 @@ def validar_confirmacao(
 
     decision = state.get("confirmation_decision")
 
-    # --------------------------------------------------------
-    # AUSENCIA DE DECISAO
-    # --------------------------------------------------------
-
     if decision is None:
         return {
             "status": "needs_clarification",
@@ -481,10 +400,6 @@ def validar_confirmacao(
             ),
             "validated_request": None,
         }
-
-    # --------------------------------------------------------
-    # CANCELAMENTO
-    # --------------------------------------------------------
 
     if decision == "cancel":
 
@@ -497,10 +412,6 @@ def validar_confirmacao(
             ),
         }
 
-    # --------------------------------------------------------
-    # RESPOSTA AMBIGUA
-    # --------------------------------------------------------
-
     if decision == "unclear":
 
         return {
@@ -512,10 +423,6 @@ def validar_confirmacao(
             ),
         }
 
-    # --------------------------------------------------------
-    # CORRECAO
-    # --------------------------------------------------------
-
     if decision == "correct":
 
         return {
@@ -524,10 +431,6 @@ def validar_confirmacao(
             "validated_request": None,
             "response": "Vamos atualizar as informações.",
         }
-
-    # --------------------------------------------------------
-    # CONFIRMACAO
-    # --------------------------------------------------------
 
     if decision == "confirm":
 
@@ -573,10 +476,6 @@ def validar_confirmacao(
                 "O planejamento pedagógico está liberado."
             ),
         }
-
-    # --------------------------------------------------------
-    # DECISAO NAO RECONHECIDA
-    # --------------------------------------------------------
 
     return {
         "status": "needs_clarification",

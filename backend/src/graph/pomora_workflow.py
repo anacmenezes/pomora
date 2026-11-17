@@ -1,20 +1,35 @@
+
 from typing import Any
 
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
 
-from .workflow import intake_graph
-from .planning.planning_workflow import planning_graph
+from ..api.database import SessionLocal
+from ..api.routes import Solicitacao
+from ..api import services
+
+from . import workflow as intake_workflow
+from .planning import planning_workflow
 
 
-# ============================================================
-# SERIALIZACAO DOS RESULTADOS
-# ============================================================
+def inicializar_grafos(checkpointer):
+    """
+    Compila os dois grafos utilizando o mesmo PostgresSaver.
+    Deve ser chamado durante a inicialização da API.
+    """
+
+    intake_workflow.intake_graph = (
+        intake_workflow.criar_workflow_intake(checkpointer)
+    )
+
+    planning_workflow.planning_graph = (
+        planning_workflow.criar_workflow_planejamento(checkpointer)
+    )
+
 
 def serializar_resultado(valor: Any) -> Any:
-    """
-    Converte objetos Pydantic em estruturas serializáveis.
-    """
+    """Converte objetos Pydantic em estruturas serializáveis."""
 
     if isinstance(valor, BaseModel):
         return valor.model_dump(mode="json")
@@ -22,36 +37,69 @@ def serializar_resultado(valor: Any) -> Any:
     return valor
 
 
-# ============================================================
-# PROCESSAMENTO INTEGRADO DO POMORA
-# ============================================================
+def salvar_solicitacao(
+    thread_id: str,
+    validated_request: dict[str, Any],
+) -> int:
+    """Salva a solicitação confirmada no PostgreSQL."""
+
+    db = SessionLocal()
+
+    try:
+        registro = services.get_by_field(
+            db=db,
+            model=Solicitacao,
+            field_name="thread_id",
+            value=thread_id,
+        )
+
+        if registro is not None:
+            return registro.id
+
+        registro = services.create(
+            db=db,
+            model=Solicitacao,
+            data={
+                "thread_id": thread_id,
+                "dados": validated_request,
+                "status": "confirmada",
+            },
+        )
+
+        return registro.id
+
+    except IntegrityError:
+        db.rollback()
+
+        registro = services.get_by_field(
+            db=db,
+            model=Solicitacao,
+            field_name="thread_id",
+            value=thread_id,
+        )
+
+        if registro is not None:
+            return registro.id
+
+        raise
+
+    finally:
+        db.close()
+
 
 def processar_mensagem_pomora(
     mensagem: str,
     thread_id: str,
 ) -> dict[str, Any]:
     """
-    Executa o fluxo completo do POMORA.
+    Executa o fluxo integrado do POMORA.
 
-    ETAPA 1:
-        Recebe a mensagem do usuário e executa o grafo da Márcia.
-
-    ETAPA 2:
-        Se a solicitação ainda não estiver confirmada,
-        retorna a resposta de atendimento.
-
-    ETAPA 3:
-        Quando a solicitação estiver confirmada, transfere
-        o UserRequest para o grafo de planejamento.
-
-    ETAPA 4:
-        Executa Professora, Assistente e Revisora.
-
-    ETAPA 5:
-        Retorna o planejamento semanal final.
-
-    O thread_id permite manter a continuidade da conversa
-    e recuperar o resultado de planejamento já concluído.
+    1. Recebe a mensagem pela Márcia.
+    2. Coleta e valida os dados.
+    3. Aguarda a confirmação.
+    4. Salva a solicitação no PostgreSQL.
+    5. Executa Professora, Assistente e Revisora.
+    6. Retorna o planejamento final.
     """
 
     if not mensagem or not mensagem.strip():
@@ -60,17 +108,20 @@ def processar_mensagem_pomora(
     if not thread_id or not thread_id.strip():
         raise ValueError("O thread_id é obrigatório.")
 
-    # --------------------------------------------------------
-    # 1. EXECUCAO DO GRAFO DA MARCIA
-    # --------------------------------------------------------
+    if intake_workflow.intake_graph is None:
+        raise RuntimeError("O grafo da Márcia não foi inicializado.")
 
+    if planning_workflow.planning_graph is None:
+        raise RuntimeError("O grafo de planejamento não foi inicializado.")
+
+    # 1. Execução do Intake
     intake_config = {
         "configurable": {
             "thread_id": thread_id,
         }
     }
 
-    intake_resultado = intake_graph.invoke(
+    intake_resultado = intake_workflow.intake_graph.invoke(
         {
             "messages": [
                 HumanMessage(content=mensagem.strip())
@@ -80,10 +131,6 @@ def processar_mensagem_pomora(
     )
 
     intake_status = intake_resultado.get("status")
-
-    # --------------------------------------------------------
-    # 2. PREPARACAO DA RESPOSTA DO ATENDIMENTO
-    # --------------------------------------------------------
 
     resposta_intake = {
         "status": intake_status,
@@ -95,8 +142,7 @@ def processar_mensagem_pomora(
         ),
     }
 
-    # Enquanto a solicitação não estiver confirmada,
-    # não executa o planejamento.
+    # 2. Aguarda confirmação
     if intake_status != "confirmed":
         return {
             "intake": resposta_intake,
@@ -111,10 +157,22 @@ def processar_mensagem_pomora(
             "não foi encontrado no estado do Intake."
         )
 
-    # --------------------------------------------------------
-    # 3. IDENTIFICACAO DO ESTADO DO PLANEJAMENTO
-    # --------------------------------------------------------
+    # 3. Salva a solicitação
+    request_id = salvar_solicitacao(
+        thread_id=thread_id,
+        validated_request=validated_request,
+    )
 
+    intake_workflow.intake_graph.update_state(
+        intake_config,
+        {
+            "request_id": str(request_id),
+        },
+    )
+
+    resposta_intake["request_id"] = request_id
+
+    # 4. Recupera ou executa o planejamento
     planning_thread_id = f"{thread_id}:planning"
 
     planning_config = {
@@ -123,8 +181,9 @@ def processar_mensagem_pomora(
         }
     }
 
-    # Verifica se o planejamento já foi concluído nesta conversa.
-    snapshot = planning_graph.get_state(planning_config)
+    snapshot = planning_workflow.planning_graph.get_state(
+        planning_config
+    )
 
     planning_state_anterior = snapshot.values or {}
 
@@ -133,40 +192,28 @@ def processar_mensagem_pomora(
     )
 
     if planejamento_concluido:
-        # Recupera o planejamento já produzido.
         planning_resultado = planning_state_anterior
 
     else:
-        # ----------------------------------------------------
-        # 4. EXECUCAO DO GRAFO DE PLANEJAMENTO
-        # ----------------------------------------------------
-
-        planning_resultado = planning_graph.invoke(
-            {
-                "intake_status": intake_status,
-                "validated_request": validated_request,
-            },
-            config=planning_config,
+        planning_resultado = (
+            planning_workflow.planning_graph.invoke(
+                {
+                    "intake_status": intake_status,
+                    "validated_request": validated_request,
+                },
+                config=planning_config,
+            )
         )
 
-    # --------------------------------------------------------
-    # 5. EXTRAÇÃO DO PLANO FINAL
-    # --------------------------------------------------------
-
+    # 5. Extrai o resultado da Revisora
     revisora_output = planning_resultado.get("revisora_output")
 
     planejamento_final = serializar_resultado(revisora_output)
 
-    planning_status = planning_resultado.get("planning_status")
-
-    # --------------------------------------------------------
-    # 6. RESPOSTA INTEGRADA
-    # --------------------------------------------------------
-
     return {
         "intake": resposta_intake,
         "planning": {
-            "status": planning_status,
+            "status": planning_resultado.get("planning_status"),
             "error_message": planning_resultado.get("error_message"),
             "validation_errors": planning_resultado.get(
                 "validation_errors",

@@ -32,6 +32,22 @@ def get_by_id(
         model.id == record_id
     ).first()
 
+def get_by_field(
+    db: Session,
+    model: type,
+    field_name: str,
+    value: Any,
+):
+    if not hasattr(model, field_name):
+        raise ValueError(
+            f"O modelo {model.__name__} não possui o campo '{field_name}'."
+        )
+
+    field = getattr(model, field_name)
+
+    return db.query(model).filter(
+        field == value
+    ).first()
 
 def get_all(
     db: Session,
